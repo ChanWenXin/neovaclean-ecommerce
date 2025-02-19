@@ -117,36 +117,55 @@
         // Initialize Stripe with your Publishable Key
         const stripe = Stripe('pk_test_51QrafBE30HnQRthtLvARhXdQY0DpwqVUbjsnBY1JeNYh4JY7MvLCqD7wMkzqNlVZSkUE8lQWZBPIKxC84z1kFX6f005ANhMOUn');  // Replace with your actual Stripe Publishable Key
 
-        document.getElementById("checkout-form").addEventListener("submit", function (e) {e.preventDefault();
+        document.getElementById("checkout-form").addEventListener("submit", function (e) {
+        e.preventDefault();
 
-            const paymentMethod = document.getElementById("payment").value;
-            const email = document.getElementById("email").value;
+        const paymentMethod = document.getElementById("payment").value;
+        const email = document.getElementById("email").value;
 
-            let buyNowItem = JSON.parse(sessionStorage.getItem("buyNowItem"));
-            let cart = JSON.parse(localStorage.getItem("cart")) || [];
+        let buyNowItem = JSON.parse(sessionStorage.getItem("buyNowItem"));
+        let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-            let finalCart = buyNowItem ? buyNowItem : cart;
-            let totalAmount = finalCart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        let finalCart = buyNowItem ? buyNowItem : cart;
 
-            console.log("Final Total Amount:", totalAmount); // Debugging
+        console.log("📧 Email sent in fetch request:", email);  // ✅ Add this debug log
 
-            if (paymentMethod === "credit") {
-                fetch("http://localhost:3000/api/payment/create-checkout-session", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ amount: totalAmount, email: email })
-                })
-                .then(response => response.json())
-                .then(session => {
+        if (!finalCart || finalCart.length === 0) {
+            alert("No products found in cart!");
+            return;
+        }
+
+        // Convert `finalCart` into the correct format for Stripe API
+        let products = finalCart.map(item => ({
+            name: item.name,
+            price: item.price,  // ✅ Price must be a number
+            quantity: item.quantity
+        }));
+
+        console.log("📦 Final Products Sent to Server:", products);
+
+        if (paymentMethod === "credit") {
+            fetch("http://localhost:3000/api/payment/create-checkout-session", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: email, products: finalCart  })  // ✅ Send products correctly
+            })
+            .then(response => response.json())
+            .then(session => {
+                if (session.error) {
+                    console.error("❌ Error from server:", session.error);
+                    alert("Payment error: " + session.error);
+                } else {
                     sessionStorage.removeItem("buyNowItem"); // ✅ Only remove after checkout
                     sessionStorage.removeItem("skipCart"); // ✅ Ensure `skipCart` is cleared
                     return stripe.redirectToCheckout({ sessionId: session.id });
-                })
-                .catch(error => console.error("Error:", error));
-            } else {
-                alert("Please select 'Credit Card' as the only available payment method.");
-            }
-        });
+                }
+            })
+            .catch(error => console.error("❌ Fetch Error:", error));
+        } else {
+            alert("Please select 'Credit Card' as the only available payment method.");
+        }
+    });
 
     </script>
     

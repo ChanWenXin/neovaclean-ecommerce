@@ -15,7 +15,7 @@ const __dirname = path.dirname(__filename);
 // PostgreSQL database connection setup
 const db = new pg.Client({
   user: "postgres",
-  host: "localhost",
+  host: "localhost", 
   database: "authentication", // Change this if your DB name is different
   password: "WJ0029PHnTB#", // Replace with your actual password
   port: 5432,
@@ -23,7 +23,6 @@ const db = new pg.Client({
 db.connect();
 
 // Middleware to handle form data and static files
-
 // Stripe Webhook
 app.use("/api/payment/webhook", express.raw({ type: "application/json" })); // Webhook requires raw payload
 
@@ -51,8 +50,9 @@ app.use(session({
 }));
 
 
-// Use Stripe Payment Route
-app.use("/api/payment", stripeRouter);  // Payment API will be accessible here
+
+
+
 
 
 // Set EJS as the templating engine
@@ -211,54 +211,11 @@ app.post("/login", async (req, res) => {
     res.render("login", { successLoginMessage: null, errorLoginMessage: "An error occurred. Please try again later." });
   }
 
-  // Handle checkout form submission
-app.post("/api/payment/create-checkout-session", async (req, res) => {
-  try {
-      const { amount, email } = req.body; // Get the amount and email from the request
-
-      if (!amount || !email) {
-          return res.status(400).json({ error: "Amount and email are required." });
-      }
-
-      console.log("Processing payment for:", { amount, email });
-
-      // Initialize Stripe (ensure you have `stripe` installed via npm)
-      const stripe = require("stripe")("sk_test_YourSecretKey"); // Replace with your actual Stripe Secret Key
-
-      // Create a Stripe Checkout Session
-      const session = await stripe.checkout.sessions.create({
-          payment_method_types: ["card"],
-          customer_email: email,
-          line_items: [
-              {
-                  price_data: {
-                      currency: "usd",
-                      product_data: { name: "NeovaClean Order" },
-                      unit_amount: amount * 100, // Convert dollars to cents
-                  },
-                  quantity: 1,
-              }
-          ],
-          mode: "payment",
-          success_url: "http://localhost:3000/success",
-          cancel_url: "http://localhost:3000/cart"
-      });
-
-      console.log("✅ Stripe Checkout Session Created:", session.id);
-
-      res.json({ id: session.id });
-  } catch (err) {
-      console.error("Stripe Checkout Error:", err);
-      res.status(500).json({ error: "Failed to create Stripe checkout session." });
-  }
 });
 
 
-});
-
-
-
-
+// Use Stripe Payment Route
+app.use("/api/payment", stripeRouter);  // Payment API will be accessible here
 
 // Start the server
 app.listen(port, () => {
