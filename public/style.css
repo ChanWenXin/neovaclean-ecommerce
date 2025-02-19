@@ -1,0 +1,74 @@
+/* Footers fixed bottom */
+html, body {
+    height: 100%; /* Ensures full height */
+    margin: 0; /* Removes default margin */
+}
+
+.d-flex.flex-column {
+    min-height: 100vh; /* Make wrapper full height */
+}
+
+footer {
+    width: 100%;
+    margin-top: auto; /* Push footer to bottom */
+}
+
+/* index.ejs */
+.logo {
+    width: 150px;
+    height: auto;
+}
+
+.nav-item a {
+  display: inline-block;
+}
+
+#login, #register {
+    padding-left: 0;
+    padding-right: 0
+}
+
+/* product.html */
+.card-img-top{
+    max-height: 400px; /* Adjust this value */
+    object-fit: cover; /* Ensures the image is cropped nicely */
+}
+
+.card shadow-sm{
+    transition: transform 0.2s;
+}
+
+.card shadow-sm:hover{
+    transform: scale(1.05);
+}
+
+.product-link{
+    text-decoration: none;
+    color: inherit;
+}
+
+/* click_into_chicken.html */
+
+/* Make carousel indicators (dots) black */
+.carousel-indicators .black-indicator {
+    background-color: black;
+}
+
+/* Make carousel controls (arrows) black */
+.black-controls .carousel-control-prev-icon,
+.black-controls .carousel-control-next-icon {
+    filter: invert(100%);
+} 
+
+/* checkout.html */
+
+#cart-total {
+    font-size: 1.5em;
+    color: #000;
+}
+
+/* all click_into_ejs */
+ /* Ensures full height */
+ .click-into-page {
+    min-height: 80vh; /* Adjusts height dynamically */
+}

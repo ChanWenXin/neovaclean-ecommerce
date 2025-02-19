@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Include the common header for login and register -->
+<%- include('header'); %>
+
+<body class="d-flex flex-column min-vh-100">
+  
+    <!-- Include the common header in the Body -->
+    <%- include('headerInsideBody'); %>
+
+    <!-- Main Content -->
+  <div class="container-fluid">
+    <div class="row h-100">
+      <!-- Left Panel -->
+      <div class="col-md-6 d-flex flex-column justify-content-center left-panel">
+        <div class = 'container'>
+            <h2 class="mb-4">Give your pet the finest, premium-quality food.</h2>
+            <p>All NeovaClean pet food undergoes regular quality inspections.</p>
+            
+            <div class="image-container mt-4">
+            <img src="/images/tortoise.png" alt="Trading Screen" class="pet">
+            <img src="/images/dog.webp" alt="Trading Screen" class="pet">
+            <img src="/images/cat.jpg" alt="Trading Screen" class="pet">
+            </div>
+
+            <div class="social-links text-white text-center mt-4">
+                <p class="mb-2">
+                    <a class="text-white me-2" href="https://www.tiktok.com/@neovaclean8?_t=ZS-8txSZndHTfU&_r=1" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-instagram" ></i></a> Join our Instagram
+                </p>
+                <p>
+                    <a class="text-white me-2" href="https://www.instagram.com/neovaclean?igsh=djg1eWhzMXV3dWdp" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-tiktok"></i></a> Join our TikTok
+                </p>
+            </div>
+        </div>
+    </div>
+
+      <!-- Right Panel -->
+      <div class="col-md-6 d-flex flex-column justify-content-center right-panel">
+        <div class="container">
+            <h1 class="text-center mb-4">Login</h1>
+        
+            <form action="/login" method="POST" class="border p-4 shadow-sm bg-light rounded">
+              <div class="mb-3">
+                <label for="username" class="form-label">Email:</label>
+                <input type="email" name="username" id="username" class="form-control" required>
+              </div>
+        
+              <div class="mb-3">
+                <label for="password" class="form-label">Password:</label>
+                <input type="password" name="password" id="password" class="form-control" required>
+              </div>
+        
+              <button type="submit" class="btn btn-primary w-100">Login</button>
+            </form>
+        
+            <!-- Success & Error Messages -->
+            <% if (successLoginMessage) { %>
+              <div class="alert alert-success mt-3 text-center">
+                <%= successLoginMessage %>
+              </div>
+            <% } %>
+        
+            <% if (errorLoginMessage) { %>
+              <div class="alert alert-danger mt-3 text-center">
+                <%= errorLoginMessage %>
+              </div>
+            <% } %>
+        
+            <p class="text-center mt-3">
+              Don't have an account? 
+              <a href="/register" class="text-decoration-none">Register here</a>
+            </p>
+          </div>
+        </div>
+    </div>
+   </div> 
+
+    <!-- Include the common footer -->
+    <%- include('footer') %>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
