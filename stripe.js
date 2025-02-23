@@ -119,8 +119,8 @@ router.post("/create-checkout-session", async (req, res) => {
                 quantity: product.quantity,
             })),
             mode: "payment",
-            success_url: "http://localhost:3000/success",
-            cancel_url: "http://localhost:3000/cancel",
+            success_url: "http://172.188.206.40/success",
+            cancel_url: "http://172.188.206.40/cancel",
         });
 
         console.log("✅ Stripe Checkout Session Created:", session.id);
