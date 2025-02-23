@@ -39,16 +39,12 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
 
     if (event.type === "checkout.session.completed") {
         const session = event.data.object;
-<<<<<<< HEAD
 
         console.log("🛒 Checkout Session Data:", session);
 
         const email = session.customer_email || session.customer_details?.email;  // ✅ FIX: Fetch email from `customer_email` OR `customer_details.email`
 
         console.log("📧 Sending confirmation email to:", email);
-=======
-        const email = session.customer_email || session.customer_details?.email;  // ✅ FIX: Fetch email from `customer_email` OR `customer_details.email`;  // ✅ Use customer_email from session
->>>>>>> cc51eed (Added GitHub Actions CI/CD Pipelines and deploying docker and kubernetes to Azure)
 
         if (!email) {
             console.error("❌ No customer email found. Skipping email notification.");
