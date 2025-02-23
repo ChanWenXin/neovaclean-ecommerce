@@ -20,46 +20,6 @@ function createTransporter() {
     });
 }
 
-
-
-// Payment Route: Creates Stripe checkout session
-router.post('/create-checkout-session', async (req, res) => {
-    let { amount, email } = req.body;
-
-    console.log("🔍 Debug: Received amount in backend:", amount);
-
-    amount = Math.round(Number(amount) * 100);  // Convert to cents
-
-    if (isNaN(amount) || amount <= 0) {
-        console.error("❌ Error: Invalid amount received:", amount);
-        return res.status(400).json({ error: "Invalid amount" });
-    }
-
-    try {
-        const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],  // ✅ Only allow card payments
-            customer_email: email,
-            line_items: [{
-                price_data: {
-                    currency: 'sgd',
-                    product_data: { name: 'Furbabies Purchase' },
-                    unit_amount: amount, 
-                },
-                quantity: 1,
-            }],
-            mode: 'payment',
-            success_url: 'http://172.188.206.40/success',
-            cancel_url: 'http://172.188.206.40/cart',
-        });
-
-        console.log("✅ Checkout Session Created:", session.id);
-        res.json({ id: session.id });
-    } catch (error) {
-        console.error("❌ Stripe Checkout Error:", error);
-        res.status(500).send('Payment failed.');
-    }
-});
-
 // Webhook Route: Handles successful Stripe payment events
 router.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
     const sig = req.headers["stripe-signature"];
@@ -103,6 +63,46 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
 
     res.json({ received: true });
 });
+
+// Payment Route: Creates Stripe checkout session
+router.post('/create-checkout-session', async (req, res) => {
+    let { amount, email } = req.body;
+
+    console.log("🔍 Debug: Received amount in backend:", amount);
+
+    amount = Math.round(Number(amount) * 100);  // Convert to cents
+
+    if (isNaN(amount) || amount <= 0) {
+        console.error("❌ Error: Invalid amount received:", amount);
+        return res.status(400).json({ error: "Invalid amount" });
+    }
+
+    try {
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],  // ✅ Only allow card payments
+            customer_email: email,
+            line_items: [{
+                price_data: {
+                    currency: 'sgd',
+                    product_data: { name: 'Furbabies Purchase' },
+                    unit_amount: amount, 
+                },
+                quantity: 1,
+            }],
+            mode: 'payment',
+            success_url: 'http://172.188.206.40/success',
+            cancel_url: 'http://172.188.206.40/cart',
+        });
+
+        console.log("✅ Checkout Session Created:", session.id);
+        res.json({ id: session.id });
+    } catch (error) {
+        console.error("❌ Stripe Checkout Error:", error);
+        res.status(500).send('Payment failed.');
+    }
+});
+
+
 
 
 export default router;
