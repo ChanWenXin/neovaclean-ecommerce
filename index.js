@@ -374,7 +374,7 @@ app.post("/api/payment/webhook", express.raw({ type: "application/json" }), asyn
             await transporter.sendMail(mailOptions);
             console.log("✅ Email sent to:", email);
         } catch (error) {
-            console.error("❌ Error sending email:",S error);
+            console.error("❌ Error sending email:", error);
         }
     }
 
