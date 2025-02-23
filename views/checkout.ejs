@@ -145,7 +145,7 @@
         console.log("📦 Final Products Sent to Server:", products);
 
         if (paymentMethod === "credit") {
-            fetch("http://localhost:3000/api/payment/create-checkout-session", {
+            fetch("http://172.188.206.40/api/payment/create-checkout-session", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: email, products: finalCart  })  // ✅ Send products correctly
