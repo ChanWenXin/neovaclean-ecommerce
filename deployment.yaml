@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neovaclean-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: neovaclean-app
+  template:
+    metadata:
+      labels:
+        app: neovaclean-app
+    spec:
+      containers:
+      - name: neovaclean-app
+        image: neovacleanregistry.azurecr.io/ecommerce-app:latest  # Your ACR image
+        ports:
+        - containerPort: 3000
+      imagePullSecrets:
+      - name: acr-secret   # Use the secret you created to pull from ACR
+

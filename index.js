@@ -5,6 +5,18 @@ import path from "path";
 import { fileURLToPath } from 'url';
 import stripeRouter from "./stripe.js";  // Import the stripe route
 import session from "express-session"; // Implement Sessions to Remember Logged-in Users
+// Send email confirmation
+import nodemailer from 'nodemailer';
+import Stripe from 'stripe';
+import dotenv from 'dotenv';
+// PostgreSQL database connection setup
+import pkg from 'pg';
+const { Client } = pkg;
+
+
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
 const port = 3000;
@@ -12,6 +24,11 @@ const port = 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+
+const stripe = new Stripe('sk_test_51QrafBE30HnQRthtroVRfxc22ks0WFWs7W4oUpvcSkt5AgzFZodLs29mDLAXnefxzFOf1Vj44Zfqy3CYWGaaGfqB00LBo1iold');  // Replace this with your actual secret key from the Stripe dashboard
+
+const endpointSecret = "whsec_67f66c26a46c2ca3565ca97cdd83377fa139c233701af3b022357f1d4219879f"; // Replace with your actual webhook secret
+/*
 // PostgreSQL database connection setup
 const db = new pg.Client({
   user: "postgres",
@@ -21,6 +38,50 @@ const db = new pg.Client({
   port: 5432,
 });
 db.connect();
+*/
+
+// Load environment variables
+dotenv.config();
+
+// PostgreSQL database connection setup
+const db = new Client({
+    user: process.env.DB_USER || "postgres",
+    host: process.env.DB_HOST || "neovaclean-postgres.postgres.database.azure.com", // Azure PostgreSQL host
+    database: process.env.DB_DATABASE || "authentication",
+    password: process.env.DB_PASSWORD || "Byt@DevOps2025!", // Use your actual Azure DB password
+
+    port: process.env.DB_PORT || 5432,
+    ssl: {
+      rejectUnauthorized: false, // Required for Azure PostgreSQL
+  },
+});
+
+// Connect to database
+(async () => {
+    try {
+        await db.connect();
+        console.log("✅ Connected to PostgreSQL (Azure)");
+    } catch (err) {
+        console.error("❌ Database connection error:", err);
+    }
+})();
+
+export default db;
+
+
+
+
+
+// Function to create transporter for sending emails
+function createTransporter() {
+  return nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+          user: "neovaclean@gmail.com", // Your Gmail address
+          pass: "xxnzysmtobeawlmq", // Your Gmail App Password //fuzxciiiwplbhevc neovaclean havvgocajaksqqlx test 
+      },
+  });
+}
 
 // Middleware to handle form data and static files
 // Stripe Webhook
@@ -163,13 +224,27 @@ app.post("/register", async (req, res) => {
     if (result.rows.length === 0) {
         // if email does not exist in db, insert both email and password into db
       await db.query("INSERT INTO users (email, password) VALUES ($1, $2)", [email, password]);
-      res.render("register", { successMessage: "You have successfully signed up an account!", errorMessage: null });
+
+      // Store user in session after successful registration
+      req.session.user = { email };
+
+      res.render("register", 
+        {
+        user: req.session.user || null, // ✅ Pass user variable
+        successMessage: "You have successfully signed up an account!", 
+        errorMessage: null });
     } else {
-      res.render("register", { successMessage: null, errorMessage: "Email already exists! Please try again." });
+      res.render("register", { 
+        user: req.session.user || null, // ✅ Ensure user is always defined
+        successMessage: null, 
+        errorMessage: "Email already exists! Please try again." });
     }
   } catch (err) {
     console.error("Error during registration:", err);
-    res.render("register", { successMessage: null, errorMessage: "An error occurred. Please try again later." });
+    res.render("register", { 
+      user: req.session.user || null, // ✅ Ensure user is always defined
+      successMessage: null, 
+      errorMessage: "An error occurred. Please try again later." });
   }
 });
 
@@ -216,6 +291,96 @@ app.post("/login", async (req, res) => {
 
 // Use Stripe Payment Route
 app.use("/api/payment", stripeRouter);  // Payment API will be accessible here
+  // Handle checkout form submission
+app.post("/api/payment/create-checkout-session", async (req, res) => {
+  try {
+      const { amount, email } = req.body; // Get the amount and email from the request
+
+      if (!amount || !email) {
+          return res.status(400).json({ error: "Amount and email are required." });
+      }
+
+      console.log("Processing payment for:", { amount, email });
+
+      // Initialize Stripe (ensure you have `stripe` installed via npm)
+      const stripe = require("stripe")("ssk_test_51QrafBE30HnQRthtroVRfxc22ks0WFWs7W4oUpvcSkt5AgzFZodLs29mDLAXnefxzFOf1Vj44Zfqy3CYWGaaGfqB00LBo1ioldey"); // Replace with your actual Stripe Secret Key
+
+      // Create a Stripe Checkout Session
+      const session = await stripe.checkout.sessions.create({
+          payment_method_types: ["card"],
+          customer_email: email,
+          line_items: [
+              {
+                  price_data: {
+                      currency: "usd",
+                      product_data: { name: "NeovaClean Order" },
+                      unit_amount: amount * 100, // Convert dollars to cents
+                  },
+                  quantity: 1,
+              }
+          ],
+          mode: "payment",
+          success_url: "http://localhost:3000/success",
+          cancel_url: "http://localhost:3000/cart"
+      });
+
+      console.log("✅ Stripe Checkout Session Created:", session.id);
+
+      res.json({ id: session.id });
+  } catch (err) {
+      console.error("Stripe Checkout Error:", err);
+      res.status(500).json({ error: "Failed to create Stripe checkout session." });
+  }
+});
+
+
+
+
+
+// Webhook Route: Handles successful Stripe payment events
+app.post("/api/payment/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+    const sig = req.headers["stripe-signature"];
+    let event;
+
+    try {// Pass raw body (Buffer) instead of JSON object
+        event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+    } catch (err) {
+        console.error("⚠️ Webhook Error:", err.message);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    if (event.type === "checkout.session.completed") {
+        const session = event.data.object;
+        const email = session.customer_email || session.customer_details?.email;  // ✅ FIX: Fetch email from `customer_email` OR `customer_details.email`;  // ✅ Use customer_email from session
+
+        if (!email) {
+            console.error("❌ No customer email found. Skipping email notification.");
+            return res.status(400).send("No email found in payment details.");
+        }
+
+        // Create email transporter
+        const transporter = createTransporter();
+
+        // Email content
+        const mailOptions = {
+            from: "neovaclean@gmail.com",
+            to: email,
+            subject: "Payment Confirmation - NeovaClean",
+            text: `Thank you for your purchase! Your order of SGD ${(session.amount_total / 100).toFixed(2)} was successful.\nOrder ID: ${session.id}`,
+        };
+
+        // Send email
+        try {
+            await transporter.sendMail(mailOptions);
+            console.log("✅ Email sent to:", email);
+        } catch (error) {
+            console.error("❌ Error sending email:",S error);
+        }
+    }
+
+    res.json({ received: true });
+});
+
 
 // Start the server
 app.listen(port, () => {

@@ -1,0 +1,33 @@
+name: CI/CD Pipeline for NeovaClean
+
+on:
+  push:
+    branches:
+      - main  # Runs the workflow when code is pushed to main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Log in to Azure Container Registry (ACR)
+        run: |
+          az acr login --name neovacleanregistry
+
+      - name: Build and Push Docker Image to ACR
+        run: |
+          docker build -t neovacleanregistry.azurecr.io/neovaclean-app:${{ github.sha }} .
+          docker push neovacleanregistry.azurecr.io/neovaclean-app:${{ github.sha }}
+
+      - name: Update AKS Deployment
+        run: |
+          kubectl set image deployment/neovaclean-app neovaclean-app=neovacleanregistry.azurecr.io/neovaclean-app:${{ github.sha }}
+
