@@ -320,8 +320,8 @@ app.post("/api/payment/create-checkout-session", async (req, res) => {
               }
           ],
           mode: "payment",
-          success_url: "http://localhost:3000/success",
-          cancel_url: "http://localhost:3000/cart"
+          success_url: "http://172.188.206.40/success",
+          cancel_url: "http://172.188.206.40/cart"
       });
 
       console.log("✅ Stripe Checkout Session Created:", session.id);
@@ -383,6 +383,7 @@ app.post("/api/payment/webhook", express.raw({ type: "application/json" }), asyn
 
 
 // Start the server
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Server running on http://0.0.0.0:${port}`);
 });
+
