@@ -66,29 +66,30 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
 
 // Payment Route: Creates Stripe checkout session
 router.post('/create-checkout-session', async (req, res) => {
-    let { amount, email } = req.body;
+    let { totalAmount, email, products } = req.body;  // ✅ Receive `products` and `totalAmount`
 
-    console.log("🔍 Debug: Received amount in backend:", amount);
+    console.log("🔍 Debug: Received amount in backend:", totalAmount);
+    console.log("📦 Received products in backend:", products);
 
     amount = Math.round(Number(amount) * 100);  // Convert to cents
 
-    if (isNaN(amount) || amount <= 0) {
-        console.error("❌ Error: Invalid amount received:", amount);
+    if (!totalAmount || totalAmount <= 0) {
+        console.error("❌ Error: Invalid total amount received:", totalAmount);
         return res.status(400).json({ error: "Invalid amount" });
     }
 
     try {
         const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],  // ✅ Only allow card payments
+            payment_method_types: ['card'],
             customer_email: email,
-            line_items: [{
+            line_items: products.map(item => ({
                 price_data: {
                     currency: 'sgd',
-                    product_data: { name: 'Furbabies Purchase' },
-                    unit_amount: amount, 
+                    product_data: { name: item.name },
+                    unit_amount: item.price,  // ✅ Use price from frontend (already in cents)
                 },
-                quantity: 1,
-            }],
+                quantity: item.quantity,
+            })),
             mode: 'payment',
             success_url: 'http://172.188.206.40/success',
             cancel_url: 'http://172.188.206.40/cart',
