@@ -27,6 +27,10 @@ jobs:
           docker build -t neovacleanregistry.azurecr.io/neovaclean-app:${{ github.sha }} .
           docker push neovacleanregistry.azurecr.io/neovaclean-app:${{ github.sha }}
 
+      - name: Set AKS Credentials
+        run: |
+          az aks get-credentials --resource-group ecommerce-neovaclean --name neovaclean-aks-cluster --overwrite-existing
+
       - name: Update AKS Deployment
         run: |
           kubectl set image deployment/neovaclean-app neovaclean-app=neovacleanregistry.azurecr.io/neovaclean-app:${{ github.sha }}
