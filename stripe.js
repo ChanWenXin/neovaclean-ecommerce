@@ -15,18 +15,23 @@ function createTransporter() {
         service: "gmail",
         auth: {
             user: "neovaclean@gmail.com", // Your Gmail address
-            pass: "havvgocajaksqqlx", // Your Gmail App Password //fuzxciiiwplbhevc neovaclean
+            pass: "xxnzysmtobeawlmq", // Your Gmail App Password //fuzxciiiwplbhevc neovaclean havvgocajaksqqlx test 
         },
     });
 }
 
 // Webhook Route: Handles successful Stripe payment events
 router.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+
+    console.log("🔔 Webhook Received! Raw body:", req.body.toString());
+
     const sig = req.headers["stripe-signature"];
     let event;
 
     try {// Pass raw body (Buffer) instead of JSON object
         event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+        console.log("🔔 Webhook Event Received:", event.type);  // ✅ Add this debug line
+
     } catch (err) {
         console.error("⚠️ Webhook Error:", err.message);
         return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -34,7 +39,12 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
 
     if (event.type === "checkout.session.completed") {
         const session = event.data.object;
-        const email = session.customer_email || session.customer_details?.email;  // ✅ FIX: Fetch email from `customer_email` OR `customer_details.email`;  // ✅ Use customer_email from session
+
+        console.log("🛒 Checkout Session Data:", session);
+
+        const email = session.customer_email || session.customer_details?.email;  // ✅ FIX: Fetch email from `customer_email` OR `customer_details.email`
+
+        console.log("📧 Sending confirmation email to:", email);
 
         if (!email) {
             console.error("❌ No customer email found. Skipping email notification.");
@@ -54,56 +64,72 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
 
         // Send email
         try {
-            await transporter.sendMail(mailOptions);
-            console.log("✅ Email sent to:", email);
+            let info = await transporter.sendMail(mailOptions);
+            console.log("✅ Email sent successfully:", info.response);
         } catch (error) {
             console.error("❌ Error sending email:", error);
         }
+        
     }
 
     res.json({ received: true });
 });
 
+
+/*async function testEmail() {
+    const transporter = createTransporter();
+    const testMailOptions = {
+        from: "neovaclean@gmail.com",
+        to: "wenxin32@hotmail.com",
+        subject: "Test Email from Webhook",
+        text: "This is a test email from your Stripe webhook.",
+    };
+
+    try {
+        let info = await transporter.sendMail(testMailOptions);
+        console.log("✅ Test Email sent:", info.response);
+    } catch (error) {
+        console.error("❌ Test Email failed:", error);
+    }
+}
+
+testEmail();
+*/
+
 // Payment Route: Creates Stripe checkout session
-router.post('/create-checkout-session', async (req, res) => {
-    let { totalAmount, email, products } = req.body;  // ✅ Receive `products` and `totalAmount`
+router.post("/create-checkout-session", async (req, res) => {
+    console.log("🔥 Debugging Stripe Request:", req.body); // Debugging log
 
-    console.log("🔍 Debug: Received amount in backend:", totalAmount);
-    console.log("📦 Received products in backend:", products);
+    const { email, products } = req.body;
 
-    amount = Math.round(Number(amount) * 100);  // Convert to cents
-
-    if (!totalAmount || totalAmount <= 0) {
-        console.error("❌ Error: Invalid total amount received:", totalAmount);
-        return res.status(400).json({ error: "Invalid amount" });
+    if (!email || !products || products.length === 0) {
+        return res.status(400).json({ error: "Invalid request. Email or products missing." });
     }
 
     try {
         const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
+            payment_method_types: ["card"],
             customer_email: email,
-            line_items: products.map(item => ({
+            line_items: products.map(product => ({
                 price_data: {
-                    currency: 'sgd',
-                    product_data: { name: item.name },
-                    unit_amount: item.price,  // ✅ Use price from frontend (already in cents)
+                    currency: "sgd",
+                    product_data: { name: product.name },
+                    unit_amount: Math.round(product.price * 100),
                 },
-                quantity: item.quantity,
+                quantity: product.quantity,
             })),
-            mode: 'payment',
-            success_url: 'http://172.188.206.40/success',
-            cancel_url: 'http://172.188.206.40/cart',
+            mode: "payment",
+            success_url: "http://localhost:3000/success",
+            cancel_url: "http://localhost:3000/cancel",
         });
 
-        console.log("✅ Checkout Session Created:", session.id);
+        console.log("✅ Stripe Checkout Session Created:", session.id);
         res.json({ id: session.id });
     } catch (error) {
         console.error("❌ Stripe Checkout Error:", error);
-        res.status(500).send('Payment failed.');
+        res.status(500).json({ error: "Payment failed." });
     }
 });
-
-
 
 
 export default router;

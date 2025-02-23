@@ -135,32 +135,24 @@
             return;
         }
 
-        // Convert `finalCart` into the correct format for Stripe API // ✅ Convert `finalCart` into `products`
+        // Convert `finalCart` into the correct format for Stripe API
         let products = finalCart.map(item => ({
             name: item.name,
-            price: Math.round(item.price * 100),  // ✅ Convert to cents for Stripe
+            price: item.price,  // ✅ Price must be a number
             quantity: item.quantity
         }));
 
-        // ✅ Calculate total amount to send to backend
-        let totalAmount = products.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        
         console.log("📦 Final Products Sent to Server:", products);
-        console.log("💰 Total Amount Sent to Server:", totalAmount);
 
         if (paymentMethod === "credit") {
             fetch("http://172.188.206.40/api/payment/create-checkout-session", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ 
-                    email: email, 
-                    products: finalCart ,
-                    totalAmount: totalAmount // ✅ Send calculated total amount
-                })  // ✅ Send products correctly
+                body: JSON.stringify({ email: email, products: finalCart  })  // ✅ Send products correctly
             })
             .then(response => response.json())
             .then(session => {
-                if (session.errorS) {
+                if (session.error) {
                     console.error("❌ Error from server:", session.error);
                     alert("Payment error: " + session.error);
                 } else {

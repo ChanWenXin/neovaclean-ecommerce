@@ -291,6 +291,49 @@ app.post("/login", async (req, res) => {
 
 // Use Stripe Payment Route
 app.use("/api/payment", stripeRouter);  // Payment API will be accessible here
+  // Handle checkout form submission
+app.post("/api/payment/create-checkout-session", async (req, res) => {
+  try {
+      const { amount, email } = req.body; // Get the amount and email from the request
+
+      if (!amount || !email) {
+          return res.status(400).json({ error: "Amount and email are required." });
+      }
+
+      console.log("Processing payment for:", { amount, email });
+
+      // Initialize Stripe (ensure you have `stripe` installed via npm)
+      const stripe = require("stripe")("ssk_test_51QrafBE30HnQRthtroVRfxc22ks0WFWs7W4oUpvcSkt5AgzFZodLs29mDLAXnefxzFOf1Vj44Zfqy3CYWGaaGfqB00LBo1ioldey"); // Replace with your actual Stripe Secret Key
+
+      // Create a Stripe Checkout Session
+      const session = await stripe.checkout.sessions.create({
+          payment_method_types: ["card"],
+          customer_email: email,
+          line_items: [
+              {
+                  price_data: {
+                      currency: "usd",
+                      product_data: { name: "NeovaClean Order" },
+                      unit_amount: amount * 100, // Convert dollars to cents
+                  },
+                  quantity: 1,
+              }
+          ],
+          mode: "payment",
+          success_url: "http://localhost:3000/success",
+          cancel_url: "http://localhost:3000/cart"
+      });
+
+      console.log("✅ Stripe Checkout Session Created:", session.id);
+
+      res.json({ id: session.id });
+  } catch (err) {
+      console.error("Stripe Checkout Error:", err);
+      res.status(500).json({ error: "Failed to create Stripe checkout session." });
+  }
+});
+
+
 
 
 
@@ -340,7 +383,6 @@ app.post("/api/payment/webhook", express.raw({ type: "application/json" }), asyn
 
 
 // Start the server
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Server running on http://0.0.0.0:${port}`);
+app.listen(port, () => {
+  console.log(`Server running on http://localhost:${port}`);
 });
-
