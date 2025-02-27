@@ -69,9 +69,6 @@ const db = new Client({
 export default db;
 
 
-
-
-
 // Function to create transporter for sending emails
 function createTransporter() {
   return nodemailer.createTransport({
@@ -222,31 +219,32 @@ app.post("/register", async (req, res) => {
     const result = await db.query("SELECT email FROM users WHERE email = $1", [email]);
 
     if (result.rows.length === 0) {
-        // if email does not exist in db, insert both email and password into db
+      // Insert new user into the database
       await db.query("INSERT INTO users (email, password) VALUES ($1, $2)", [email, password]);
 
-      // Store user in session after successful registration
-      req.session.user = { email };
+      // ✅ No auto-login! Only show a success message.
+      req.session.successMessage = "You have successfully signed up! Please log in.";
 
-      res.render("register", 
-        {
-        user: req.session.user || null, // ✅ Pass user variable
-        successMessage: "You have successfully signed up an account!", 
-        errorMessage: null });
+      // ✅ Redirect to login page instead of rendering the register page
+      return res.redirect("/login"); 
     } else {
-      res.render("register", { 
-        user: req.session.user || null, // ✅ Ensure user is always defined
+      // Email already exists
+      return res.render("register", { 
+        user: null, 
         successMessage: null, 
-        errorMessage: "Email already exists! Please try again." });
+        errorMessage: "Email already exists! Please try again." 
+      });
     }
   } catch (err) {
     console.error("Error during registration:", err);
-    res.render("register", { 
-      user: req.session.user || null, // ✅ Ensure user is always defined
+    return res.render("register", { 
+      user: null, 
       successMessage: null, 
-      errorMessage: "An error occurred. Please try again later." });
+      errorMessage: "An error occurred. Please try again later." 
+    });
   }
 });
+
 
 // Handle POST request to /login route
 app.post("/login", async (req, res) => {
