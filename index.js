@@ -172,12 +172,17 @@ app.get("/logout", (req, res) => {
 
 // Render the login page
 app.get("/login", (req, res) => {
+  const successLoginMessage = req.session.successMessage || null; // ✅ Get message or set null
+  req.session.successMessage = null; // ✅ Clear after displaying
+
   res.render("login", { 
     user: req.session.user || null, 
-    successLoginMessage: null, 
+    successLoginMessage: successLoginMessage, // ✅ Ensure message is only shown after registration
     errorLoginMessage: null 
   });
 });
+
+
 
 // Render the register page
 app.get("/register", (req, res) => {
@@ -248,7 +253,7 @@ app.post("/register", async (req, res) => {
 
 // Handle POST request to /login route
 app.post("/login", async (req, res) => {
-    // Extracting the email and password from the submitted form (req.body)
+  // Extracting the email and password from the submitted form (req.body)
   const email = req.body.username;
   const password = req.body.password;
 
