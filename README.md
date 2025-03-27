@@ -1,2 +1,2 @@
 # neovaclean-ecommerce
-Full-stack ecommerce
+Full-stack ecommerce on Azure
